@@ -1,0 +1,37 @@
+version: '3.8'
+
+services:
+  registry:
+    image: registry:2.8.2
+    volumes:
+      - "../nfs-storage/controller/docker-registry:/var/lib/registry"
+    ports:
+      - 5000:5000
+  vault-server:
+    build:
+      context: .
+      dockerfile: Dockerfile-vault
+    ports:
+      - 8200:8200
+    volumes:
+      - ../nfs-storage/controller/vault/config:/vault/config
+      - ../nfs-storage/controller/vault/policies:/vault/policies
+      - ../nfs-storage/controller/vault/data:/vault/data
+      - ../nfs-storage/controller/vault/logs:/vault/logs
+    environment:
+      - VAULT_ADDR=http://127.0.0.1:8200
+    command: server -config=/vault/config/vault-config.json
+    cap_add:
+      - IPC_LOCK
+  nginx:
+    image: nginx:1.25.1-alpine
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ../nfs-storage/controller/nginx/conf.d:/etc/nginx/conf.d
+      - ../nfs-storage/controller/nginx/nginx.conf:/etc/nginx/nginx.conf
+      - ../nfs-storage/controller/nginx/dhparam.pem:/etc/nginx/dhparam.pem
+      - ../nfs-storage/controller/nginx/letsencrypt:/etc/letsencrypt
+      - ../nfs-storage/controller/nginx/logs:/var/log:rw
+      - ../nfs-storage/controller/nginx/cache:/var/cache:rw
