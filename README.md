@@ -7,6 +7,7 @@ The SDS platform is an automated infrastructure delivery platform based on servi
 - Kubernetes hosted in cloud or on-prem   
 - Terraform and Terragrunt   
 - Ansible   
+- Kubespray   
 - Bash   
 - Python   
 - Docker Registry   
@@ -24,6 +25,7 @@ Usage:
 2. Clone this repository in the platform user home folder on the first controller host   
 3. Update/Create params file as per example   
 4. Run ./bootstrap.sh   
+4. Perform K8S cluster configuration with GitOps code
 
 Diagram: 
 ![alt text](https://github.com/[username]/[reponame]/blob/[branch]/image.jpg?raw=true)

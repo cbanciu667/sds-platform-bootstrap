@@ -3,11 +3,11 @@
 # source main variables
 source ./params
 
-# Update OS
+# Update OS on each controller
 echo "Updating OS packages on controller system:"
 sudo apt update && sudo apt-add-repository ppa:ansible/ansible -y && sudo apt full-upgrade -y && sudo apt dist-upgrade && sudo apt autoremove && sudo apt autoclean
 
-# Install prereq
+# Install prereq on each controller
 echo "Installing prerequisites on controller system:"
 sudo apt install python3 python3-pip keepalived haproxy ansible -y
 sudo update-alternatives --install /usr/bin/python python /usr/bin/python3 1
@@ -16,9 +16,7 @@ sudo update-alternatives --install /usr/bin/python python /usr/bin/python3 1
 sudo pip3 install --force-reinstall pyopenssl
 
 # Clone base infrastructure code
-echo "Cloning required repositories:"
 git clone git@github.com:cbanciu667/sds-ansible.git ../sds-ansible
-git clone git@github.com:cbanciu667/sds-cloud.git ../sds-cloud
 
 # Kubespray init for on-prem Kubernetes clusters
 if [[ $PLATFORM_HOSTING != 'ONPREM' ]]; then
@@ -87,7 +85,7 @@ else
     echo "Vault initialisation is required for next steps. Please start over. Exiting..."
 fi
 
-# Kubespray deployment for on-prem Kubernetes clusters
+# Kubespray deployment for Kubernetes clusters
 if [[ $PLATFORM_HOSTING != 'ONPREM' ]]; then
     cd ../kubespray
     ansible-playbook -b -v -i inventory/$PLATFORM_NAME/hosts.yaml --become --become-user=root cluster.yml -u $PLATFORM_USERNAME
