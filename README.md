@@ -1,6 +1,5 @@
 # sds-platform-bootstrap
-Automation for sds platform initialisation.   
-This automation will perform the initial configurations required and will deploy/initilise the SDS Kubernetes cluster.   
+This automation will perform the initial configurations required and will deploy/initialise the SDS Kubernetes cluster.   
 
 This Automation is using tools like:   
 - Terraform and Terragrunt for cloud deployments   
