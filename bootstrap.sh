@@ -12,6 +12,11 @@ echo "Installing prerequisites on controller system:"
 sudo apt install python3 python3-pip keepalived haproxy ansible -y
 sudo update-alternatives --install /usr/bin/python python /usr/bin/python3 1
 
+#
+# If Hyper-V is used as virtualisation hosting please run hyper-v-patch.sh script
+# ./hyper-v-patch.sh
+#
+
 # FIX for bug in R53 ansible module - "AttributeError: module 'lib' has no attribute 'OpenSSL_add_all_algorithms'"
 sudo pip3 install --force-reinstall pyopenssl
 
@@ -78,14 +83,14 @@ docker-compose up -d --build
 
 # Vault
 echo "Manually initialise vault and secure ROOT TOKEN."
-read -p "Did you  performed vault initialisation ? (Yes/No) or (Y/N)" ANSWER
+read -p "Did you  performed vault initialisation according to documentation ? (Yes/No) or (Y/N)" ANSWER
 if [[ $ANSWER == "y" || $ANSWER == "Y" || $ANSWER == "Yes" ]]; then
     echo "Vault initialised and TOKEN secured."
 else
     echo "Vault initialisation is required for next steps. Please start over. Exiting..."
 fi
 
-# Kubespray deployment for Kubernetes clusters
+# Kubespray deployment for on-prem Kubernetes clusters
 if [[ $PLATFORM_HOSTING != 'ONPREM' ]]; then
     cd ../kubespray
     ansible-playbook -b -v -i inventory/$PLATFORM_NAME/hosts.yaml --become --become-user=root cluster.yml -u $PLATFORM_USERNAME
@@ -97,46 +102,24 @@ fi
 # WIP WIP WIP WIP WIP WIP ....
 # Terragrunt for AWS based platforms
 if [[ $PLATFORM_HOSTING != 'AWS' ]]; then
-    git clone git@github.com:cbanciu667/sds-terragrunt.git ../sds-terragrunt
-    cd ../sds-terragrunt
+    git clone git@github.com:cbanciu667/sds-cloud.git ../sds-cloud
+    cd ../sds-cloud
     echo "Manually check $CURENT_PATH/params/aws/$PLATFORM_NAME"
     read -p "Did you performed the manual update for AWS terrgrunt bootstrap parameters according to example ? (Yes/No) or (Y/N)" ANSWER
     if [[ $ANSWER == "y" || $ANSWER == "Y" || $ANSWER == "Yes" ]]; then
-        terragrunt init
-        ....
+        terragrunt plan-all
+        terragrunt apply-all
+        cd ../sds-platform-bootstrap
     else
         echo "Terragrunt AWS init params required. Exiting..."
         exit 1
-    fi    
+    fi
 fi
 
-# Terragrunt for Azure based platforms
-if [[ $PLATFORM_HOSTING != 'AZURE' ]]; then
-    git clone git@github.com:cbanciu667/sds-terragrunt.git ../sds-terragrunt
-    cd ../sds-terragrunt
-    echo "Manually check $CURENT_PATH/params/azure/$PLATFORM_NAME"
-    read -p "Did you performed the manual update for Azure terrgrunt bootstrap parameters according to example ? (Yes/No) or (Y/N)" ANSWER
-    if [[ $ANSWER == "y" || $ANSWER == "Y" || $ANSWER == "Yes" ]]; then
-        terragrunt init
-        ....
-    else
-        echo "Terragrunt AZURE init params required. Exiting..."
-        exit 1
-    fi    
-fi
-
-# Terragrunt for Gcp based platforms
-if [[ $PLATFORM_HOSTING != 'GCP' ]]; then
-    git clone git@github.com:cbanciu667/sds-terragrunt.git ../sds-terragrunt
-    cd ../sds-terragrunt
-    echo "Manually check $CURENT_PATH/params/google/$PLATFORM_NAME"
-    read -p "Did you performed the manual update for Google cloud terrgrunt bootstrap parameters according to example ? (Yes/No) or (Y/N)" ANSWER
-    if [[ $ANSWER == "y" || $ANSWER == "Y" || $ANSWER == "Yes" ]]; then
-        terragrunt init
-        ....
-    else
-        echo "Terragrunt GCP init params required. Exiting..."
-        exit 1
-    fi    
-fi
 # WIP WIP WIP WIP WIP WIP ....
+# Kubernetes and GitOps initialisation
+git clone git@github.com:cbanciu667/sds-kubernetes.git ../sds-kubernetes
+cd ../sds-kubernetes
+./kubernetes-init.sh $PLATFORM_HOSTING
+
+echo "SDS Platform initialised"
