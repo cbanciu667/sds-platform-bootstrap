@@ -27,7 +27,7 @@ git clone git@github.com:cbanciu667/sds-ansible.git ../sds-ansible
 if [[ $PLATFORM_HOSTING != 'ONPREM' ]]; then
     git clone git@github.com:kubernetes-sigs/kubespray.git ../kubespray
     cd ../kubespray
-    sudo pip install -r requirements.txt
+    pip install -r requirements.txt
     cp -rfp inventory/sample inventory/$PLATFORM_NAME
     declare -a IPS=($PLATFORM_NAME-cp1,$K8S_ONPREM_MASTER_NODE1_IP $PLATFORM_NAME-cp2,$K8S_ONPREM_MASTER_NODE2_IP $PLATFORM_NAME-k8s-node1,$K8S_ONPREM_WORKER_NODE1_IP $PLATFORM_NAME-k8s-node2,$K8S_ONPREM_WORKER_NODE2_IP $PLATFORM_NAME-k8s-node3,$K8S_ONPREM_WORKER_NODE3_IP $PLATFORM_NAME-k8s-node4,$K8S_ONPREM_WORKER_NODE4_IP)
     CONFIG_FILE=inventory/$PLATFORM_NAME/hosts.yaml python contrib/inventory_builder/inventory.py "${IPS[@]}"
