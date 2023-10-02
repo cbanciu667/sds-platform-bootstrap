@@ -42,7 +42,7 @@ if [[ $PLATFORM_HOSTING != 'ONPREM' ]]; then
     fi
 fi
 
-# Run sds ansible for generic configuration
+# Ansible automation
 echo "Runing base ansible playbook:"
 cd ../sds-ansible
 CURENT_PATH=$(pwd)
@@ -57,33 +57,13 @@ else
     exit 1
 fi
 
-# Fail2ban manual configuration for controllers - controllers must be highly secure!
-FILE=/etc/resolv.conf
-if [[ -f "/etc/fail2ban/jail.local" ]]; then
-    echo "Fail2ban already configured. Proceeding with next step."
-else
-    sudo cp /etc/fail2ban/jail.conf /etc/fail2ban/jail.local
-    CURENT_PATH=$(pwd)
-    echo "Manually configure Fil2ban by updating: /etc/fail2ban/jail.local"
-    read -p "Did you performed the manual step above ? (Yes/No) or (Y/N)" ANSWER
-    if [[ $ANSWER == "y" || $ANSWER == "Y" || $ANSWER == "Yes" ]]; then
-        echo "Fail2ban configured manually. Proceeding with next step."
-        sudo systemctl enable fail2ban
-        sudo systemctl start fail2ban
-        sudo systemctl status fail2ban
-    else
-    echo "Fail2ban manual configuration is required. Please start over. Exiting..."
-        exit 1
-    fi
-fi
-
 # Controller services
 echo "Starting controller services"
 docker-compose up -d --build
 
 # Vault
 echo "Manually initialise vault and secure ROOT TOKEN."
-read -p "Did you  performed vault initialisation according to documentation ? (Yes/No) or (Y/N)" ANSWER
+read -p "Did you  performed manual step above ? (Yes/No) or (Y/N)" ANSWER
 if [[ $ANSWER == "y" || $ANSWER == "Y" || $ANSWER == "Yes" ]]; then
     echo "Vault initialised and TOKEN secured."
 else
@@ -98,28 +78,31 @@ if [[ $PLATFORM_HOSTING != 'ONPREM' ]]; then
     cd ../sds-platform-bootstrap
 fi
 
-
-# WIP WIP WIP WIP WIP WIP ....
-# Terragrunt for AWS based platforms
-if [[ $PLATFORM_HOSTING != 'AWS' ]]; then
-    git clone git@github.com:cbanciu667/sds-cloud.git ../sds-cloud
-    cd ../sds-cloud
-    echo "Manually check $CURENT_PATH/params/aws/$PLATFORM_NAME"
-    read -p "Did you performed the manual update for AWS terrgrunt bootstrap parameters according to example ? (Yes/No) or (Y/N)" ANSWER
-    if [[ $ANSWER == "y" || $ANSWER == "Y" || $ANSWER == "Yes" ]]; then
-        terragrunt plan-all
-        terragrunt apply-all
-        cd ../sds-platform-bootstrap
-    else
-        echo "Terragrunt AWS init params required. Exiting..."
-        exit 1
-    fi
+# Terragrunt and Terraform for AWS, Azure or GCP
+git clone git@github.com:cbanciu667/sds-terragrunt.git ../sds-terragrunt
+cd ../sds-terragrunt
+echo "Manually fillout the cloud infra required parameters."
+read -p "Did you performed the manual step above ? (Yes/No) or (Y/N)" ANSWER
+if [[ $ANSWER == "y" || $ANSWER == "Y" || $ANSWER == "Yes" ]]; then
+    terragrunt plan-all
+    terragrunt apply-all
+    cd ../sds-platform-bootstrap
+else
+    echo "Terragrunt parameters configuration required. Exiting..."
+    exit 1
 fi
 
-# WIP WIP WIP WIP WIP WIP ....
-# Kubernetes and GitOps initialisation
+# Kubernetes and GitOps
 git clone git@github.com:cbanciu667/sds-kubernetes.git ../sds-kubernetes
 cd ../sds-kubernetes
-./kubernetes-init.sh $PLATFORM_HOSTING
+echo "Manually fillout the Kubernetes and GitOps required parameters."
+read -p "Did you performed the manual update for AWS terrgrunt bootstrap parameters ? (Yes/No) or (Y/N)" ANSWER
+if [[ $ANSWER == "y" || $ANSWER == "Y" || $ANSWER == "Yes" ]]; then
+    ./kubernetes-init.sh
+    cd ../sds-platform-bootstrap
+else
+    echo "Kubernetes parameters configuration required. Exiting..."
+    exit 1
+fi
 
 echo "SDS Platform initialised"
