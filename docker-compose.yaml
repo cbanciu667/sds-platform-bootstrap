@@ -24,7 +24,7 @@ services:
     cap_add:
       - IPC_LOCK
   nginx:
-    image: nginx:1.25.1-alpine
+    image: nginx:1.25.3-alpine
     ports:
       - "80:80"
       - "443:443"
