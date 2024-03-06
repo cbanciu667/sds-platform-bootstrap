@@ -1,11 +1,15 @@
 #!/bin/bash
 
+# DESCRIPTION
+# This script contains the commands required to start a new platform configuration
+# Run these commands on the primary or on the backup platform controller
+
 # source main variables
 source ./params
 
 # Update OS on each controller
 echo "Updating OS packages on controller system:"
-sudo apt update && sudo apt-add-repository ppa:ansible/ansible -y && sudo apt full-upgrade -y && sudo apt dist-upgrade && sudo apt autoremove && sudo apt autoclean
+sudo apt update && sudo apt full-upgrade -y && sudo apt dist-upgrade && sudo apt autoremove && sudo apt autoclean
 
 # Install prereq on each controller
 echo "Installing prerequisites on controller system:"
@@ -19,6 +23,12 @@ sudo update-alternatives --install /usr/bin/python python /usr/bin/python3 1
 
 # FIX for bug in R53 ansible module - "AttributeError: module 'lib' has no attribute 'OpenSSL_add_all_algorithms'"
 sudo pip3 install --force-reinstall pyopenssl
+
+# Install Helm Cli
+curl -fsSL -o get_helm.sh https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3
+chmod 700 get_helm.sh
+./get_helm.sh
+rm get_helm.sh
 
 # Clone base infrastructure code
 git clone git@github.com:cbanciu667/sds-ansible.git ../sds-ansible
