@@ -1,11 +1,15 @@
 #!/bin/bash
 
+# DESCRIPTION
+# This script contains the commands required to start a new platform configuration
+# Run these commands on the primary or on the backup platform controller
+
 # source main variables
 source ./params
 
 # Update OS on each controller
 echo "Updating OS packages on controller system:"
-sudo apt update && sudo apt-add-repository ppa:ansible/ansible -y && sudo apt full-upgrade -y && sudo apt dist-upgrade && sudo apt autoremove && sudo apt autoclean
+sudo apt update && sudo apt full-upgrade -y && sudo apt dist-upgrade && sudo apt autoremove && sudo apt autoclean
 
 # Install prereq on each controller
 echo "Installing prerequisites on controller system:"
@@ -20,6 +24,12 @@ sudo update-alternatives --install /usr/bin/python python /usr/bin/python3 1
 # FIX for bug in R53 ansible module - "AttributeError: module 'lib' has no attribute 'OpenSSL_add_all_algorithms'"
 sudo pip3 install --force-reinstall pyopenssl
 
+# Install Helm Cli
+curl -fsSL -o get_helm.sh https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3
+chmod 700 get_helm.sh
+./get_helm.sh
+rm get_helm.sh
+
 # Clone base infrastructure code
 git clone git@github.com:cbanciu667/sds-ansible.git ../sds-ansible
 
@@ -27,7 +37,7 @@ git clone git@github.com:cbanciu667/sds-ansible.git ../sds-ansible
 if [[ $PLATFORM_HOSTING != 'ONPREM' ]]; then
     git clone git@github.com:kubernetes-sigs/kubespray.git ../kubespray
     cd ../kubespray
-    sudo pip install -r requirements.txt
+    pip install -r requirements.txt
     cp -rfp inventory/sample inventory/$PLATFORM_NAME
     declare -a IPS=($PLATFORM_NAME-cp1,$K8S_ONPREM_MASTER_NODE1_IP $PLATFORM_NAME-cp2,$K8S_ONPREM_MASTER_NODE2_IP $PLATFORM_NAME-k8s-node1,$K8S_ONPREM_WORKER_NODE1_IP $PLATFORM_NAME-k8s-node2,$K8S_ONPREM_WORKER_NODE2_IP $PLATFORM_NAME-k8s-node3,$K8S_ONPREM_WORKER_NODE3_IP $PLATFORM_NAME-k8s-node4,$K8S_ONPREM_WORKER_NODE4_IP)
     CONFIG_FILE=inventory/$PLATFORM_NAME/hosts.yaml python contrib/inventory_builder/inventory.py "${IPS[@]}"
@@ -42,7 +52,7 @@ if [[ $PLATFORM_HOSTING != 'ONPREM' ]]; then
     fi
 fi
 
-# Run sds ansible for generic configuration
+# Ansible automation
 echo "Runing base ansible playbook:"
 cd ../sds-ansible
 CURENT_PATH=$(pwd)
@@ -57,33 +67,13 @@ else
     exit 1
 fi
 
-# Fail2ban manual configuration for controllers - controllers must be highly secure!
-FILE=/etc/resolv.conf
-if [[ -f "/etc/fail2ban/jail.local" ]]; then
-    echo "Fail2ban already configured. Proceeding with next step."
-else
-    sudo cp /etc/fail2ban/jail.conf /etc/fail2ban/jail.local
-    CURENT_PATH=$(pwd)
-    echo "Manually configure Fil2ban by updating: /etc/fail2ban/jail.local"
-    read -p "Did you performed the manual step above ? (Yes/No) or (Y/N)" ANSWER
-    if [[ $ANSWER == "y" || $ANSWER == "Y" || $ANSWER == "Yes" ]]; then
-        echo "Fail2ban configured manually. Proceeding with next step."
-        sudo systemctl enable fail2ban
-        sudo systemctl start fail2ban
-        sudo systemctl status fail2ban
-    else
-    echo "Fail2ban manual configuration is required. Please start over. Exiting..."
-        exit 1
-    fi
-fi
-
 # Controller services
 echo "Starting controller services"
 docker-compose up -d --build
 
 # Vault
 echo "Manually initialise vault and secure ROOT TOKEN."
-read -p "Did you  performed vault initialisation according to documentation ? (Yes/No) or (Y/N)" ANSWER
+read -p "Did you  performed manual step above ? (Yes/No) or (Y/N)" ANSWER
 if [[ $ANSWER == "y" || $ANSWER == "Y" || $ANSWER == "Yes" ]]; then
     echo "Vault initialised and TOKEN secured."
 else
@@ -98,28 +88,31 @@ if [[ $PLATFORM_HOSTING != 'ONPREM' ]]; then
     cd ../sds-platform-bootstrap
 fi
 
-
-# WIP WIP WIP WIP WIP WIP ....
-# Terragrunt for AWS based platforms
-if [[ $PLATFORM_HOSTING != 'AWS' ]]; then
-    git clone git@github.com:cbanciu667/sds-cloud.git ../sds-cloud
-    cd ../sds-cloud
-    echo "Manually check $CURENT_PATH/params/aws/$PLATFORM_NAME"
-    read -p "Did you performed the manual update for AWS terrgrunt bootstrap parameters according to example ? (Yes/No) or (Y/N)" ANSWER
-    if [[ $ANSWER == "y" || $ANSWER == "Y" || $ANSWER == "Yes" ]]; then
-        terragrunt plan-all
-        terragrunt apply-all
-        cd ../sds-platform-bootstrap
-    else
-        echo "Terragrunt AWS init params required. Exiting..."
-        exit 1
-    fi
+# Terragrunt and Terraform for AWS, Azure or GCP
+git clone git@github.com:cbanciu667/sds-terragrunt.git ../sds-terragrunt
+cd ../sds-terragrunt
+echo "Manually fillout the cloud infra required parameters."
+read -p "Did you performed the manual step above ? (Yes/No) or (Y/N)" ANSWER
+if [[ $ANSWER == "y" || $ANSWER == "Y" || $ANSWER == "Yes" ]]; then
+    terragrunt plan-all
+    terragrunt apply-all
+    cd ../sds-platform-bootstrap
+else
+    echo "Terragrunt parameters configuration required. Exiting..."
+    exit 1
 fi
 
-# WIP WIP WIP WIP WIP WIP ....
-# Kubernetes and GitOps initialisation
+# Kubernetes and GitOps
 git clone git@github.com:cbanciu667/sds-kubernetes.git ../sds-kubernetes
 cd ../sds-kubernetes
-./kubernetes-init.sh $PLATFORM_HOSTING
+echo "Manually fillout the Kubernetes and GitOps required parameters."
+read -p "Did you performed the manual update for AWS terrgrunt bootstrap parameters ? (Yes/No) or (Y/N)" ANSWER
+if [[ $ANSWER == "y" || $ANSWER == "Y" || $ANSWER == "Yes" ]]; then
+    ./kubernetes-init.sh
+    cd ../sds-platform-bootstrap
+else
+    echo "Kubernetes parameters configuration required. Exiting..."
+    exit 1
+fi
 
 echo "SDS Platform initialised"
