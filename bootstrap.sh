@@ -84,6 +84,8 @@ fi
 if [[ $PLATFORM_HOSTING != 'ONPREM' ]]; then
     cd ../kubespray
     ansible-playbook -b -v -i inventory/$PLATFORM_NAME/hosts.yaml --become --become-user=root cluster.yml -u $PLATFORM_USERNAME
+    # KUBESPRAY CLUSTER UPGRADES
+    # ansible-playbook -b -v -i inventory/$PLATFORM_NAME/hosts.yaml --become --become-user=root upgrade-cluster.yml
     mkdir -p $HOME/.kube && cp inventory/$PLATFORM_NAME/artifacts/admin.conf $HOME/.kube/config && sudo chown $(id -u):$(id -g) $HOME/.kube/config && export KUBECONFIG=$HOME/.kube/config
     cd ../sds-platform-bootstrap
 fi
