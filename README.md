@@ -3,8 +3,7 @@ This automation will perform the initial configurations required and will deploy
 
 This Automation is using tools like:   
 - Terraform and Terragrunt for cloud deployments   
-- Ansible for basic hosts configuration   
-- Kubespray for on-prem Kubernetes clusters   
+- Ansible for basic hosts configuration    
 - Docker Registry for air-gaped envs   
 - Hashicorp Vault for secrets   
 - Nginx for controller services   

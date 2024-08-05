@@ -1,7 +1,7 @@
 export PLATFORM_NAME="sds"
 export PLATFORM_DOMAIN="soliddistributedsystems.io"
 export PLATFORM_USERNAME="platform_user"
-export PLATFORM_EMAIL_CONTACT="cb2375@outlook.com"
+export PLATFORM_EMAIL_CONTACT="cbanciu@${PLATFORM_DOMMAIN}"
 export DNS_PROVIDER="ROUTE53"
 export PLATFORM_HOSTING="ONPREM"
 export CONTROLLER_IP="192.168.100.7"
